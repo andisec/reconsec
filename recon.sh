@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#   R E C O N  —  Full Auto Recon Tool v4.0.1 PRO (31 Fitur)
+#   R E C O N  —  Full Auto Recon Tool v4.0.3 PRO (31 Fitur)
 #   Gunakan HANYA untuk target yang kamu punya izin resmi
 #   (bug bounty program / pentest yang terkontrak). Bertanggung jawab bro!
 #
@@ -9,7 +9,7 @@
 #     ./recon.sh --batch targets.txt   (full auto scan banyak domain)
 # ============================================================================
 
-VERSION="4.0.1"
+VERSION="4.0.3"
 RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'; BLUE=$'\033[0;34m'
 CYAN=$'\033[0;36m'; MAGENTA=$'\033[0;35m'; NC=$'\033[0m'
 
@@ -53,8 +53,8 @@ cat << 'EOF'
  \___/(_____)(__/\__)(__)(__)(___/(____)\___)
 EOF
 echo -e "${NC}"
-echo -e "${CYAN} [+] Full Auto Recon Tool v$VERSION PRO — authorized pentest only [+]"
-echo -e "${CYAN} [+] Gunakan hanya pada target yang kamu punya izin legal!   [+]"
+echo -e "${CYAN}     [+] Full Auto Recon Tool v$VERSION PRO — authorized pentest only [+]"
+echo -e "${CYAN}     [+] Gunakan hanya pada target yang kamu punya izin legal!   [+]"
 echo ""
 }
 
@@ -169,52 +169,42 @@ config_setup() {
 }
 
 # ------------------------- DEPENDENCIES -------------------------
+# Instalasi sekarang via ./install.sh (menu bernomor) + requirements.txt.
+# recon.sh hanya MEMERIKSA & melaporkan status — tidak install apa pun.
 TOOLS_CORE=(curl jq nmap whois dig whatweb openssl unzip)
+TOOLS_GO=(subfinder assetfinder httpx dnsx waybackurls ffuf nuclei gowitness dalfox alterx)
+TOOLS_EXTRA=(subzy wafw00f testssl.sh theHarvester apkleaks)
 
-check_and_install_core() {
-  section "Cek & install tool inti ..."
-  for pkg in "${TOOLS_CORE[@]}"; do
-    if ! command -v "$pkg" &>/dev/null; then
-      warn "$pkg belum ada, mencoba install ..."
-      if command -v apt &>/dev/null; then
-        sudo apt-get install -y "$pkg" &>/dev/null || warn "gagal install $pkg (apt)"
-      else
-        warn "$pkg tidak ditemukan & apt tidak tersedia. Install manual!"
-      fi
+check_deps() {
+  section "Cek dependencies (install via: ./install.sh)"
+  [ -d "$HOME/go/bin" ] && export PATH="$PATH:$HOME/go/bin"
+  local ok=0 missing=0 t missing_list=""
+  for t in "${TOOLS_CORE[@]}" "${TOOLS_GO[@]}" "${TOOLS_EXTRA[@]}"; do
+    if command -v "$t" &>/dev/null; then
+      ok=$((ok+1))
     else
-      info "$pkg ${GREEN}OK${NC}"
+      missing=$((missing+1))
+      missing_list="$missing_list $t"
     fi
   done
-}
-
-install_go_tools() {
-  if ! command -v go &>/dev/null; then
-    warn "Golang tidak ada — install dulu: https://go.dev/dl/ (script lanjut tanpa tool GO)"
-    return 1
-  fi
-  section "Install/update tool berbasis Go ..."
-  run_logged "subfinder"    go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-  run_logged "assetfinder"  go install -v github.com/tomnomnom/assetfinder@latest
-  run_logged "httpx"        go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
-  run_logged "dnsx"         go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
-  run_logged "waybackurls"  go install -v github.com/tomnomnom/waybackurls@latest
-  run_logged "ffuf"         go install -v github.com/ffuf/ffuf/v2@latest
-  run_logged "nuclei"       go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-  run_logged "gowitness"   go install -v github.com/sensepost/gowitness@latest
-  run_logged "dalfox"      go install -v github.com/hahwul/dalfox/v2@latest
-  run_logged "alterx"      go install -v github.com/projectdiscovery/alterx/cmd/alterx@latest
-  if [ -d "$HOME/go/bin" ]; then
-    export PATH="$PATH:$HOME/go/bin"
+  if [ -s "$WORDLIST" ]; then ok=$((ok+1)); else missing=$((missing+1)); missing_list="$missing_list wordlist"; fi
+  info "Tools siap: ${GREEN}$ok${NC} · belum ada: ${YELLOW}$missing${NC} (wordlist ikut dihitung)"
+  if [ "$missing" -gt 0 ]; then
+    warn "Belum terpasang:$missing_list"
+    warn "Install cepat: jalankan ${GREEN}./install.sh${NC} di folder ini (menu bernomor)"
+    warn "  Daftar lengkap tools ada di requirements.txt"
+    warn "Script tetap lanjut — modul tanpa tool akan pakai fallback (curl/dig/grep)."
   fi
 }
 
 ensure_wordlist() {
   if [ ! -s "$WORDLIST" ]; then
-    warn "Wordlist tidak ada, download default (SecLists common.txt) ..."
-    mkdir -p "$(dirname "$WORDLIST")"
-    curl -sL "https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common.txt" \
-      -o "$WORDLIST" 2>/dev/null || { touch "$WORDLIST"; warn "gagal download wordlist, pakai file kosong"; }
+    warn "Wordlist tidak ada di: $WORDLIST"
+    warn "Install cepat: jalankan ${GREEN}./install.sh${NC} (menu no 29) di folder ini"
+    warn "  Manual: download SecLists 'common.txt' ke path di atas"
+    return 1
   fi
+  return 0
 }
 
 # ------------------------- FITUR 2: SUBDOMAIN ENUM -------------------------
@@ -500,7 +490,7 @@ dir_brute() {
     error "ffuf tidak tersedia — install via go install"; mark_fail "dir brute (ffuf hilang)"; return 1
   fi
   [ -s "$urls" ] || { error "tidak ada live host, jalankan fitur 3 dulu"; mark_fail "dir brute (tanpa live host)"; return 1; }
-  ensure_wordlist
+  ensure_wordlist || { mark_fail "dir brute (wordlist hilang — install via ./install.sh no 29)"; return 1; }
 
   local max_hosts
   max_hosts=$(cnt "$urls")
@@ -748,7 +738,7 @@ vhost_fuzz() {
   if ! command -v ffuf &>/dev/null; then
     error "ffuf tidak tersedia"; mark_fail "vhost (ffuf hilang)"; return 1
   fi
-  ensure_wordlist
+  ensure_wordlist || { mark_fail "vhost (wordlist hilang — install via ./install.sh no 29)"; return 1; }
 
   local ip
   ip=$(dig +short A "$TARGET" @1.1.1.1 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
@@ -821,9 +811,7 @@ nuclei_scan() {
   fi
   [ -s "$urls" ] || { error "tidak ada live host, jalankan fitur 3 dulu"; mark_fail "nuclei (tanpa live host)"; return 1; }
 
-  info "update templates (sekali saja, sabar)..."
-  nuclei -update-templates >> "$LOG_FILE" 2>&1 || warn "update template skip"
-
+  # Template nuclei dikelola oleh ./install.sh (no 1) — recon.sh TIDAK update/download otomatis
   info "nuclei scan berjalan (misconfig, exposures, takeovers, CVE) ..."
   if nuclei -l "$urls" -severity low,medium,high,critical \
       -tags exposure,misconfig,takeover,cve,unauth \
@@ -1704,8 +1692,7 @@ main() {
   fi
 
   load_config
-  check_and_install_core
-  install_go_tools
+  check_deps
   menu
 }
 
