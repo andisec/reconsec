@@ -53,8 +53,8 @@ cat << 'EOF'
  \___/(_____)(__/\__)(__)(__)(___/(____)\___)
 EOF
 echo -e "${NC}"
-echo -e "${CYAN}     [+] Full Auto Recon Tool v$VERSION PRO — authorized pentest only [+]"
-echo -e "${CYAN}     [+] Gunakan hanya pada target yang kamu punya izin legal!   [+]"
+echo -e "${CYAN} [+] Full Auto Recon Tool v$VERSION PRO — authorized pentest only [+]"
+echo -e "${CYAN} [+] Gunakan hanya pada target yang kamu punya izin legal!   [+]"
 echo ""
 }
 
@@ -1608,7 +1608,7 @@ menu() {
     echo -e "${CYAN}  --- Vulnerability & Payload ---${NC}"
     echo -e "   ${GREEN}10.${NC} Subdomain Takeover Check"
     echo -e "   ${GREEN}11.${NC} Screenshot Otomatis       ${GREEN}12.${NC} Email Harvesting"
-    echo -e "   ${GREEN}13.${NC} Secret/API Key Scanner     ${GREEN}14.${NC} Parameter Fuzzing"
+    echo -e "   ${GREEN}13.${NC} Secret/API Key Scanner    ${GREEN}14.${NC} Parameter Fuzzing"
     echo -e "   ${GREEN}15.${NC} CORS Check                ${GREEN}20.${NC} Security Headers Audit"
     echo -e "   ${GREEN}21.${NC} XSS Scanner (dalfox)      ${GREEN}22.${NC} WAF Detection"
     echo -e "${CYAN}  --- Recon Lanjutan ---${NC}"
