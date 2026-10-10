@@ -7,11 +7,11 @@
  \___/(_____)(__/\__)(__)(__)(___/(____)\___)
 ```
 
-# RECON — Full Auto Recon Tool v4.0 PRO
+# RECON — Full Auto Recon Tool v4.0.3 PRO
 
 **All-in-one automated reconnaissance framework for authorized pentesting & bug bounty**
 
-[![Version](https://img.shields.io/badge/version-4.0-00b894?style=flat-square)](https://github.com/andisec/reconsec)
+[![Version](https://img.shields.io/badge/version-4.0.3-00b894?style=flat-square)](https://github.com/andisec/reconsec)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Bash](https://img.shields.io/badge/shell-bash-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Termux%20%7C%20Windows%20%7C%20macOS-333333?style=flat-square)](https://github.com/andisec/reconsec)
@@ -38,7 +38,8 @@ RECON is a **fully automated reconnaissance tool** built in pure Bash. Input one
 ```bash
 git clone https://github.com/andisec/reconsec.git
 cd reconsec
-chmod +x recon.sh
+chmod +x recon.sh install.sh
+./install.sh     # 🧰 pilih tools yang mau di-install (menu bernomor)
 ./recon.sh
 ```
 
@@ -48,6 +49,59 @@ That's it. Pick **menu 1 (FULL AUTO SCAN)**, enter your target domain, and let i
 ```bash
 curl -sL https://raw.githubusercontent.com/andisec/reconsec/main/recon.sh -o recon.sh && chmod +x recon.sh && ./recon.sh
 ```
+
+---
+
+## 🧰 Installer Interaktif — `install.sh`
+
+Bosan install dependencies satu-satu? Repo ini punya **installer interaktif bernomor**. Jalankan `./install.sh` dan kamu yang kontrol mau install yang mana dulu:
+
+```
+$ ./install.sh
+
+  RECON INSTALLER v1.0.0 — github.com/andisec/reconsec
+  Sistem : Ubuntu 24.04 LTS
+  Status : 7/29 tools terpasang
+
+  -- GO TOOLS (go install) --
+  [+] 1.  nuclei        Vulnerability scanner — engine utama
+  [-] 2.  subfinder     Subdomain enumeration (passive)
+  [-] 3.  httpx         Live host probe dan tech detection
+  ...
+
+  Pilih nomor (mis. 1 2 5-8 / 0=all / q=keluar):
+```
+
+Fitur installer:
+- ✅ **Menu bernomor 1–29** — install persis yang kamu pilih, atau range (`5-8`)
+- ✅ **Deteksi otomatis** — tool yang sudah terpasang di-skip, tampil `[+]` hijau
+- ✅ **Auto-prasyarat** — pilih tools Go tanpa punya Go? `golang` di-install otomatis dulu
+- ✅ **Multi-platform** — apt / pacman / dnf / brew / pkg (Termux) auto-detect, sudo auto-detect
+- ✅ **Ringkasan hasil** — berapa OK / skip / gagal setiap sesi
+
+### Contoh Pemakaian
+
+```bash
+./install.sh              # menu interaktif
+./install.sh 1 2 3        # langsung install nuclei, subfinder, httpx
+./install.sh 1-8          # install range Go tools (1 sampai 8)
+./install.sh --all        # install SEMUANYA (29 tools)
+./install.sh --check      # cek status tools tanpa install
+./install.sh --help       # bantuan lengkap
+```
+
+### `requirements.txt`
+
+Daftar tools disimpan di **`requirements.txt`** dengan format satu baris per tool:
+
+```
+id|name|category|source|description
+1|nuclei|go|github.com/projectdiscovery/nuclei/v3/cmd/nuclei|Vulnerability scanner — engine utama
+2|subfinder|go|github.com/projectdiscovery/subfinder/v2/cmd/subfinder|Subdomain enumeration (passive)
+...
+```
+
+File ini **dibaca langsung oleh `install.sh`** — single source of truth untuk dependencies. Mau nambah tool baru? Tinggal tambah satu baris di `requirements.txt`, menu installer otomatis ikut tanpa ubah kode.
 
 ---
 
@@ -101,7 +155,7 @@ chmod +x recon.sh
 ./recon.sh
 ```
 
-> 💡 RECON auto-installs Go tools (subfinder, httpx, ffuf, nuclei, etc.) on first run. Sit tight, it takes a few minutes — once only.
+> 💡 Go tools (subfinder, httpx, ffuf, nuclei, dll.) di-install via `./install.sh` (pilih nomor, atau `--all`). Sekali install, dipakai selamanya.
 
 **Arch Linux:**
 ```bash
@@ -256,7 +310,7 @@ cd reconsec
 chmod +x recon.sh
 bash recon.sh
 ```
-> ⚠️ `dig` sudah bawaan macOS. `dnsutils`/`apt` tidak ada → script akan skip auto-install apt, tapi dependency-free fallback tetap jalan penuh.
+> ⚠️ `dig` sudah bawaan macOS. `dnsutils`/`apt` tidak ada → tool itu di-skip, tapi dependency-free fallback tetap jalan penuh.
 
 ---
 
@@ -384,16 +438,43 @@ recon_results/example.com-20261010_080000/
 
 ## 📦 Dependencies
 
-### Core (auto-installed via apt)
-`curl` `jq` `nmap` `whois` `dig` `whatweb` `openssl` `unzip`
+> 💡 **Cara termudah:** jalankan `./install.sh` — semua tools ada di menu bernomor, kamu tinggal pilih mau install yang mana dulu. Daftar resmi tersimpan di **`requirements.txt`** (dibaca otomatis oleh installer).
 
-### Go Tools (auto-installed via `go install`)
-`subfinder` `assetfinder` `httpx` `dnsx` `waybackurls` `ffuf` `nuclei` `gowitness` `dalfox` `alterx`
+### 📋 Daftar lengkap (= isi `requirements.txt` & menu install.sh)
 
-> RECON installs what's missing at startup — but **every module has a dependency-free fallback**, so missing tools only mean reduced depth, never a crash.
+| No | Tool | Via | Fungsi |
+|----|------|-----|--------|
+| 1 | `nuclei` | go install | Vulnerability scanner — engine utama |
+| 2 | `subfinder` | go install | Subdomain enumeration (passive) |
+| 3 | `httpx` | go install | Live host probe & tech detection |
+| 4 | `dnsx` | go install | DNS brute force & resolver |
+| 5 | `ffuf` | go install | Directory & parameter brute force |
+| 6 | `dalfox` | go install | XSS scanner & parameter analysis |
+| 7 | `assetfinder` | go install | Subdomain sources (passive) |
+| 8 | `waybackurls` | go install | URL historis (Wayback Machine) |
+| 9 | `gowitness` | go install | Screenshot subdomain (butuh no 21) |
+| 10 | `alterx` | go install | Subdomain permutation generator |
+| 11 | `subzy` | go install | Subdomain takeover checker |
+| 12 | `golang` | package manager | Bahasa Go — prasyarat no 1–11 |
+| 13 | `curl` | package manager | HTTP client (fallback utama) |
+| 14 | `jq` | package manager | JSON parser untuk report |
+| 15 | `nmap` | package manager | Port scanner |
+| 16 | `whois` | package manager | WHOIS & info registrasi domain |
+| 17 | `dig` | package manager | DNS lookup (fallback) |
+| 18 | `openssl` | package manager | TLS & sertifikat analysis |
+| 19 | `netcat` | package manager | Banner grabbing & port check |
+| 20 | `git` | package manager | Clone tools & templates |
+| 21 | `chromium` | package manager | Headless browser untuk screenshot |
+| 22 | `testssl.sh` | git clone | Audit TLS/SSL mendalam |
+| 23 | `theHarvester` | pip | OSINT email & subdomain harvesting |
+| 24 | `arjun` | pip | Hidden parameter discovery |
+| 25 | `wafw00f` | pip | WAF fingerprinting |
+| 26 | `apkleaks` | pip | Secret scanning APK (butuh Java) |
+| 27 | `whatweb` | package manager | Web technology fingerprinting |
+| 28 | `unzip` | package manager | Extract file zip & APK |
+| 29 | `wordlist` | download | SecLists common.txt → `~/.wordlist/dirs.txt` |
 
-### Optional (for extra depth)
-`testssl.sh` · `theHarvester` · `arjun` · `subzy` · `apkleaks` · `wafw00f` · `chromium` (for screenshots)
+> 💡 **Pembagian tugas:** `install.sh` = install tools + wordlist. `recon.sh` = **cek status saja** — tidak install/download/update apa pun saat dijalankan, jadi startup instan. Tool yang hilang cuma mengurangi kedalaman scan karena **setiap modul punya fallback dependency-free** (`curl`/`dig`/`grep`), tidak pernah bikin crash.
 
 ---
 
