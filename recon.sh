@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#   R E C O N  —  Full Auto Recon Tool v4.0 PRO (31 Fitur)
+#   R E C O N  —  Full Auto Recon Tool v4.0.1 PRO (31 Fitur)
 #   Gunakan HANYA untuk target yang kamu punya izin resmi
 #   (bug bounty program / pentest yang terkontrak). Bertanggung jawab bro!
 #
@@ -9,9 +9,9 @@
 #     ./recon.sh --batch targets.txt   (full auto scan banyak domain)
 # ============================================================================
 
-VERSION="4.0"
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
-CYAN='\033[0;36m'; MAGENTA='\033[0;35m'; NC='\033[0m'
+VERSION="4.0.1"
+RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'; BLUE=$'\033[0;34m'
+CYAN=$'\033[0;36m'; MAGENTA=$'\033[0;35m'; NC=$'\033[0m'
 
 # ------------------------- CONFIG -------------------------
 THREADS=40
@@ -47,7 +47,7 @@ banner() {
 clear
 echo -e "${RED}"
 cat << 'EOF'
- ___  _____  _    _    __    ___  ____  ___
+  ___  _____  _    _    __    ___  ____  ___
  / __)(  _  )( \/\/ )  /__\  / __)( ___)/ __)
 ( (_-. )(_)(  )    (  /(__)\ \__ \ )__)( (__ 
  \___/(_____)(__/\__)(__)(__)(___/(____)\___)
@@ -98,7 +98,7 @@ init_target() {
 
 setup_target() {
   local input
-  read -rp "$(echo -e ${CYAN}[?]${NC} Masukkan domain target (cth: example.com): ${NC})" input
+  read -rp "${CYAN}[?]${NC} Masukkan domain target (cth: example.com): " input
   input=$(echo "$input" | sed 's|https\?://||; s|/.*||; s|^www\.||' | tr -d '[:space:]')
   if [ -z "$input" ]; then
     error "Target kosong! Ulangi."
@@ -445,7 +445,7 @@ security_headers() {
       3) grade="D" ;; 2) grade="E" ;; *) grade="F" ;;
     esac
     echo "$url | grade $grade | score $score/6 | missing:$missing" >> "$out/headers_audit.txt"
-    [ "$grade" = "F" ] || [ "$grade" = "E" ] && echo "$url (grade $grade)" >> "$out/headers_grade_f.txt"
+    { [ "$grade" = "F" ] || [ "$grade" = "E" ]; } && echo "$url (grade $grade)" >> "$out/headers_grade_f.txt"
   done < "$urls"
 
   local bad
@@ -610,7 +610,7 @@ tls_analysis() {
   local out="$BASE_DIR/tls"
   mkdir -p "$out"
   local urls="$BASE_DIR/live/live_urls.txt"
-  [ -s "$urls" ] || { echo "https://$TARGET" > "$urls"; }
+  if [ ! -s "$urls" ]; then echo "https://$TARGET" > "$urls"; fi
 
   # 1. Ekstrak SAN dari sertifikat (sumber subdomain tambahan)
   info "Ekstrak Subject Alternative Name dari sertifikat (top 20 host) ..."
@@ -721,8 +721,16 @@ google_dorks() {
   } > "$out/dorks_google.txt"
 
   # URL siap pakai (ter-encode)
-  sed 's/^/https:\/\/www.google.com\/search?q=/' "$out/dorks_google.txt" \
-    | grep '^https' | sed 's/ /%20/g; s/"/%22/g' > "$out/dorks_urls.txt" 2>/dev/null
+  grep '^https' /dev/null 2>/dev/null
+  sed -n 's/^https.*$//p' "$out/dorks_google.txt" >/dev/null 2>&1
+  {
+    while read -r line; do
+      case "$line" in
+        \#*) continue ;;
+        *) echo "https://www.google.com/search?q=$(echo "$line" | sed 's/ /%20/g; s/"/%22/g')" ;;
+      esac
+    done < "$out/dorks_google.txt"
+  } > "$out/dorks_urls.txt" 2>/dev/null
 
   info "Dork generated: ${GREEN}$(grep -c . "$out/dorks_google.txt")${NC} (dorks_google.txt)"
   info "URL siap buka : $(cnt "$out/dorks_urls.txt") (dorks_urls.txt)"
@@ -847,7 +855,6 @@ xss_scan() {
 
   info "Ambil 200 URL ber-parameter utk scan XSS (dari wayback) ..."
   head -200 "$params_file" | grep "^https\?://" > "$out/xss_targets.txt"
-  # wayback URL kadang arsip; coba langsung ke host asal via param_fuzz hasil? biar sederhana: filter yang host-nya masih live
   info "dalfox jalan di $(cnt "$out/xss_targets.txt") URL (sabar, ini scan paling lama) ..."
   if dalfox file "$out/xss_targets.txt" --silence --skip-bav -o "$out/xss_findings.txt" >> "$LOG_FILE" 2>&1; then
     local count
@@ -988,7 +995,7 @@ scan_secrets() {
     "$out" --include='*.js' 2>/dev/null > "$out/secrets_confirmed.txt" || true
 
   info "scan keyword sensitif (perlu review manual) ..."
-  grep -RInE '(api[_-]?key|apikey|client[_-]?secret|secret[_-]?key|access[_-]?token|auth[_-]?token|password)["'"'"' ]*[:=]' \
+  grep -RInE "(api[_-]?key|apikey|client[_-]?secret|secret[_-]?key|access[_-]?token|auth[_-]?token|password)[\"' ]*[:=]" \
     "$out" --include='*.js' 2>/dev/null | head -200 > "$out/secrets_keywords.txt" || true
 
   local confirmed keywords
@@ -1007,7 +1014,7 @@ mobile_recon() {
   mkdir -p "$out"
 
   local src
-  read -rp "$(echo -e ${CYAN}[?]${NC} Path/URL file APK target: ${NC})" src
+  read -rp "${CYAN}[?]${NC} Path/URL file APK target: " src
   if [ -z "$src" ]; then
     error "Tidak ada input APK"; mark_fail "mobile recon (tanpa APK)"; return 1
   fi
@@ -1037,12 +1044,12 @@ mobile_recon() {
 
   info "Kumpulin endpoint URL ..."
   grep -rhoE 'https?://[a-zA-Z0-9._~:/?#@!$&()*+,;=%-]+' "$ex" 2>/dev/null \
-    | grep -vE 'w3\.org|apache\.org|xmlpull|google\.com/schema|schemas\.android|github\.com/[a-z-]+/[a-z-]+/releases' \
+    | grep -vE 'w3\.org|apache\.org|xmlpull|google\.com/schema|schemas\.android' \
     | sort -u | head -500 > "$out/endpoints.txt"
   grep "\.$TARGET" "$out/endpoints.txt" 2>/dev/null | sort -u > "$out/endpoints_target.txt"
 
   info "Scan API key & secret di dalam APK ..."
-  grep -rhoE 'AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9A-Za-z-]+|sk_live_[0-9a-zA-Z]+|AIza[0-9A-Za-z_-]{35}' \
+  grep -rhoE 'AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|ghp_[A-Za-z0-9]{36}|xox[baprs]-[0-9A-Za-z-]+|sk_live_[0-9a-zA-Z]+' \
     "$ex" 2>/dev/null | sort -u > "$out/mobile_secrets.txt" || true
 
   info "Kumpulin email dari APK ..."
@@ -1168,7 +1175,7 @@ full_auto_flow() {
 }
 
 full_auto() {
-  step "[FITUR 1] ★ FULL AUTO RECON — Semua Fitur Sekali Jalan ★"
+  step "[FITUR 1] FULL AUTO RECON — Semua Fitur Sekali Jalan"
   setup_target || return 1
   full_auto_flow
 }
@@ -1189,9 +1196,9 @@ batch_run() {
       warn "SKIP (bukan domain valid): $dom"; skip=$((skip+1)); continue
     fi
     echo ""
-    echo -e "${CYAN}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░${NC}"
+    echo -e "${CYAN}============================================================${NC}"
     info "BATCH TARGET: ${GREEN}$dom${NC}"
-    echo -e "${CYAN}░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░${NC}"
+    echo -e "${CYAN}============================================================${NC}"
     init_target "$dom"
     full_auto_flow || true
     ok=$((ok+1))
@@ -1204,7 +1211,7 @@ batch_run() {
 batch_mode() {
   step "[FITUR 16] Mode Batch — Multi Target dari File"
   local list_file
-  read -rp "$(echo -e ${CYAN}[?]${NC} Path file daftar target (1 domain per baris, cth: targets.txt): ${NC})" list_file
+  read -rp "${CYAN}[?]${NC} Path file daftar target (1 domain per baris, cth: targets.txt): " list_file
   batch_run "$list_file"
 }
 
@@ -1212,7 +1219,7 @@ batch_mode() {
 monitor_diff() {
   step "[FITUR 17] Monitoring — Deteksi Asset Baru (Diff Scan Lama vs Baru)"
   local input
-  read -rp "$(echo -e ${CYAN}[?]${NC} Domain yang sudah pernah di-scan minimal 2x: ${NC})" input
+  read -rp "${CYAN}[?]${NC} Domain yang sudah pernah di-scan minimal 2x: " input
   input=$(echo "$input" | sed 's|https\?://||; s|/.*||; s|^www\.||' | tr -d '[:space:]')
   if ! valid_domain "$input"; then
     error "Format domain tidak valid: $input"
@@ -1270,18 +1277,21 @@ monitor_diff() {
 cron_setup() {
   step "[FITUR 29] Auto Re-scan Terjadwal (cron)"
   local dom hour
-  read -rp "$(echo -e ${CYAN}[?]${NC} Domain yang mau di-monitor tiap hari: ${NC})" dom
+  read -rp "${CYAN}[?]${NC} Domain yang mau di-monitor tiap hari: " dom
   dom=$(echo "$dom" | sed 's|https\?://||; s|/.*||; s|^www\.||' | tr -d '[:space:]')
   if ! valid_domain "$dom"; then
     error "Format domain tidak valid"
     return 1
   fi
-  read -rp "$(echo -e ${CYAN}[?]${NC} Jam berapa scan jalan tiap hari [6]: ${NC})" hour
+  read -rp "${CYAN}[?]${NC} Jam berapa scan jalan tiap hari [6]: " hour
   hour=${hour:-6}
   case "$hour" in
     ''|*[!0-9]*) error "Jam harus angka 0-23"; return 1 ;;
   esac
-  [ "$hour" -ge 0 ] && [ "$hour" -le 23 ] || { error "Jam harus 0-23"; return 1; }
+  if [ "$hour" -lt 0 ] || [ "$hour" -gt 23 ]; then
+    error "Jam harus 0-23"
+    return 1
+  fi
 
   local script_path
   script_path=$(readlink -f "$0" 2>/dev/null || echo "$0")
@@ -1312,7 +1322,7 @@ export_html() {
   local src="$BASE_DIR"
   if [ -z "$src" ] || [ ! -f "$src/REPORT.md" ]; then
     local input
-    read -rp "$(echo -e ${CYAN}[?]${NC} Domain hasil scan yang mau di-export: ${NC})" input
+    read -rp "${CYAN}[?]${NC} Domain hasil scan yang mau di-export: " input
     input=$(echo "$input" | sed 's|https\?://||; s|/.*||; s|^www\.||' | tr -d '[:space:]')
     src=$(ls -dt recon_results/"$input"-* 2>/dev/null | head -1)
   fi
@@ -1369,7 +1379,7 @@ dashboard_html() {
   local src="$BASE_DIR"
   if [ -z "$src" ] || [ ! -f "$src/REPORT.md" ]; then
     local input
-    read -rp "$(echo -e ${CYAN}[?]${NC} Domain hasil scan yang mau di-dashboard: ${NC})" input
+    read -rp "${CYAN}[?]${NC} Domain hasil scan yang mau di-dashboard: " input
     input=$(echo "$input" | sed 's|https\?://||; s|/.*||; s|^www\.||' | tr -d '[:space:]')
     src=$(ls -dt recon_results/"$input"-* 2>/dev/null | head -1)
   fi
@@ -1386,6 +1396,11 @@ dashboard_html() {
     echo "<details open><summary>$1</summary><pre>$(head -300 "$2" 2>/dev/null)</pre></details>"
   }
 
+  local sec_count cors_count hgf_count
+  sec_count=$(cnt "$src/secrets/secrets_confirmed.txt")
+  cors_count=$(cnt "$src/cors/cors_reflected.txt")
+  hgf_count=$(cnt "$src/headers/headers_grade_f.txt")
+
   {
     echo "<!DOCTYPE html><html><head><meta charset='utf-8'>"
     echo "<title>RECON Dashboard — $TARGET</title>"
@@ -1401,8 +1416,6 @@ dashboard_html() {
     echo "summary{cursor:pointer;color:#58a6ff;font-weight:bold;padding:8px 0}"
     echo "pre{background:#0d1117;padding:12px;overflow-x:auto;border-radius:6px;font-size:12px;white-space:pre-wrap}"
     echo "table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #30363d;padding:6px 12px;text-align:left}"
-    echo "tr.critical td:first-child{color:#f85149;font-weight:bold}tr.high td:first-child{color:#ff7b72}"
-    echo "tr.medium td:first-child{color:#d29922}tr.low td:first-child{color:#3fb950}"
     echo "</style></head><body>"
     echo "<h1>RECON Dashboard v$VERSION</h1>"
     echo "<p>Target: <b>$TARGET</b> | $src | $(date)</p>"
@@ -1412,9 +1425,15 @@ dashboard_html() {
     echo "<div class='card'><div class='v'>$(cnt "$src/subdomains/all_subdomains.txt")</div><div class='l'>Subdomain</div></div>"
     echo "<div class='card'><div class='v'>$(cnt "$src/live/live_hosts.txt")</div><div class='l'>Live Host</div></div>"
     echo "<div class='card'><div class='v'>$(cnt "$src/nuclei/nuclei_findings.txt")</div><div class='l'>Nuclei</div></div>"
-    echo "<div class='card'><div class='v $( [ "$(cnt "$src/secrets/secrets_confirmed.txt")" -gt 0 ] && echo vuln)'>$(cnt "$src/secrets/secrets_confirmed.txt")</div><div class='l'>Secret</div></div>"
-    echo "<div class='card'><div class='v $( [ "$(cnt "$src/cors/cors_reflected.txt")" -gt 0 ] && echo vuln)'>$(cnt "$src/cors/cors_reflected.txt")</div><div class='l'>CORS Bad</div></div>"
-    echo "<div class='card'><div class='v $( [ "$(cnt "$src/headers/headers_grade_f.txt")" -gt 0 ] && echo warn)'>$(cnt "$src/headers/headers_grade_f.txt")</div><div class='l'>Header E/F</div></div>"
+    echo "<div class='card'><div class='v"
+    [ "$sec_count" -gt 0 ] && echo -n " vuln"
+    echo "'>$sec_count</div><div class='l'>Secret</div></div>"
+    echo "<div class='card'><div class='v"
+    [ "$cors_count" -gt 0 ] && echo -n " vuln"
+    echo "'>$cors_count</div><div class='l'>CORS Bad</div></div>"
+    echo "<div class='card'><div class='v"
+    [ "$hgf_count" -gt 0 ] && echo -n " warn"
+    echo "'>$hgf_count</div><div class='l'>Header E/F</div></div>"
     echo "<div class='card'><div class='v'>$(cnt "$src/xss/xss_findings.txt")</div><div class='l'>XSS</div></div>"
     echo "<div class='card'><div class='v'>$(cat "$src"/takeover/takeover_*.txt 2>/dev/null | grep -c .)</div><div class='l'>Takeover</div></div>"
     echo "<div class='card'><div class='v'>$(cnt "$src/emails/emails.txt")</div><div class='l'>Email</div></div>"
@@ -1446,19 +1465,15 @@ dashboard_html() {
     echo " var s=q.toLowerCase();"
     echo " var pres=document.getElementsByTagName('pre');"
     echo " for(var i=0;i<pres.length;i++){"
+    echo "  if(s===''){continue;}"
     echo "  var lines=pres[i].innerHTML.split('\n');"
     echo "  var out='';"
     echo "  for(var j=0;j<lines.length;j++){"
     echo "   if(lines[j].toLowerCase().indexOf(s)>-1){out+=lines[j]+'\n';}"
     echo "  }"
-    echo "  pres[i].style.display=(s==='')?'':'block';"
-    echo "  if(s!==''){pres[i].textContent=out;}"
+    echo "  pres[i].textContent=out;"
     echo " }"
     echo "}"
-    echo "document.addEventListener('DOMContentLoaded',function(){"
-    echo " var pres=document.getElementsByTagName('pre');"
-    echo " for(var i=0;i<pres.length;i++){pres[i].style.whiteSpace='pre-wrap';}"
-    echo "});"
     echo "</script>"
     echo "<hr><p style='color:#8b949e'>RECON v$VERSION PRO — hanya untuk pengujian yang sah (bug bounty/pentest berizin).</p>"
     echo "</body></html>"
@@ -1557,23 +1572,22 @@ generate_report() {
   } > "$BASE_DIR/REPORT.md"
 
   echo ""
-  echo -e "${GREEN}  ╔══════════════════════════════════════════════════╗${NC}"
-  echo -e "${GREEN}  ║           SCAN SELESAI — RINGKASAN v$VERSION PRO         ║${NC}"
-  echo -e "${GREEN}  ╠══════════════════════════════════════════════════╣${NC}"
-  printf  "${GREEN}  ║${NC}  Target            : %-29s ${GREEN}║${NC}\n" "$TARGET"
-  printf  "${GREEN}  ║${NC}  Subdomain         : %-29s ${GREEN}║${NC}\n" "$sub_count"
-  printf  "${GREEN}  ║${NC}  Live host         : %-29s ${GREEN}║${NC}\n" "$live_count"
-  printf  "${GREEN}  ║${NC}  Port terbuka      : %-29s ${GREEN}║${NC}\n" "$port_count"
-  printf  "${GREEN}  ║${NC}  Nuclei findings   : %-29s ${GREEN}║${NC}\n" "$nuclei_count"
-  printf  "${GREEN}  ║${NC}  Secret terkonfirmasi: %-28s ${GREEN}║${NC}\n" "$secret_count"
-  printf  "${GREEN}  ║${NC}  XSS / CORS bad    : %-29s ${GREEN}║${NC}\n" "$xss_count / $cors_count"
-  printf  "${GREEN}  ║${NC}  Header E/F / TLS  : %-29s ${GREEN}║${NC}\n" "$badhdr_count / $tls_count"
-  printf  "${GREEN}  ║${NC}  WAF               : %-29s ${GREEN}║${NC}\n" "$waf_note"
-  printf  "${GREEN}  ║${NC}  Step OK / Gagal   : %-29s ${GREEN}║${NC}\n" "$STEPS_OK / $STEPS_FAIL"
-  echo -e "${GREEN}  ╠══════════════════════════════════════════════════╣${NC}"
-  echo -e "${GREEN}  ║${NC}  Laporan MD  : ${CYAN}$BASE_DIR/REPORT.md${NC}               ${GREEN}║${NC}"
-  echo -e "${GREEN}  ║${NC}  Dashboard   : ${CYAN}jalankan fitur 30${NC}                   ${GREEN}║${NC}"
-  echo -e "${GREEN}  ╚══════════════════════════════════════════════════╝${NC}"
+  echo -e "${GREEN}  ==============================================================${NC}"
+  echo -e "${GREEN}             SCAN SELESAI — RINGKASAN v$VERSION PRO           ${NC}"
+  echo -e "${GREEN}  ==============================================================${NC}"
+  printf  "${GREEN}  Target            : %-29s${NC}\n" "$TARGET"
+  printf  "${GREEN}  Subdomain         : %-29s${NC}\n" "$sub_count"
+  printf  "${GREEN}  Live host         : %-29s${NC}\n" "$live_count"
+  printf  "${GREEN}  Port terbuka      : %-29s${NC}\n" "$port_count"
+  printf  "${GREEN}  Nuclei findings   : %-29s${NC}\n" "$nuclei_count"
+  printf  "${GREEN}  Secret terkonfirmasi: %-28s${NC}\n" "$secret_count"
+  printf  "${GREEN}  XSS / CORS bad    : %-29s${NC}\n" "$xss_count / $cors_count"
+  printf  "${GREEN}  Header E/F / TLS  : %-29s${NC}\n" "$badhdr_count / $tls_count"
+  printf  "${GREEN}  WAF               : %-29s${NC}\n" "$waf_note"
+  printf  "${GREEN}  Step OK / Gagal   : %-29s${NC}\n" "$STEPS_OK / $STEPS_FAIL"
+  echo -e "${GREEN}  ==============================================================${NC}"
+  echo -e "  Laporan MD  : ${CYAN}$BASE_DIR/REPORT.md${NC}"
+  echo -e "  Dashboard   : ${CYAN}jalankan fitur 30${NC}"
   if [ "$STEPS_FAIL" -gt 0 ]; then
     echo -e "${YELLOW}  [!] Step yang perlu dicek:$FAILED_STEPS${NC}"
   fi
@@ -1609,7 +1623,7 @@ menu() {
     echo -e "   ${GREEN}0.${NC} Exit"
     echo -e "${CYAN}  ===============================================================${NC}"
     echo ""
-    read -rp "$(echo -e ${CYAN}[?]${NC} Pilih menu: ${NC})" choice
+    read -rp "${CYAN}[?]${NC} Pilih menu: " choice
     case "$choice" in
       1)  full_auto ;;
       2)  setup_target && enum_subdomains ;;
@@ -1680,7 +1694,7 @@ main() {
     warn "Jangan pakai root penuh kalau tidak perlu (nmap butuh sudo saja)"
   fi
   banner
-  echo -e "${YELLOW}  ⚠  DISCLAIMER: Tool ini hanya untuk pengujian yang SAH${NC}"
+  echo -e "${YELLOW}  DISCLAIMER: Tool ini hanya untuk pengujian yang SAH${NC}"
   echo -e "${YELLOW}     (bug bounty resmi / pentest dengan izin tertulis).${NC}"
   echo -e "${YELLOW}     Kamu bertanggung jawab penuh atas penggunaannya.${NC}"
   echo ""
