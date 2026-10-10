@@ -1,0 +1,5 @@
+# Contoh daftar target untuk mode batch (fitur 16) & CLI --batch
+# Satu domain per baris. HANYA domain yang kamu punya izin legal!
+example.com
+sub.example.com
+bugbounty-target.com
