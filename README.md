@@ -416,20 +416,20 @@ API keys are automatically written to subfinder's `provider-config.yaml` — sub
 ## 📊 Example Output
 
 ```
-╔══════════════════════════════════════════════════╗
-║           SCAN SELESAI — RINGKASAN v4.0 PRO         ║
-╠══════════════════════════════════════════════════╣
-║  Target            : example.com                 ║
-║  Subdomain         : 247                         ║
+╔═══════════════════════════════════════════════════╗
+║           SCAN SELESAI — RINGKASAN v4.0 PRO       ║
+╠═══════════════════════════════════════════════════╣
+║  Target            : example.com                  ║
+║  Subdomain         : 247                          ║
 ║  Live host         : 84                           ║
-║  Port terbuka      : 231                         ║
-║  Nuclei findings   : 9                           ║
-║  Secret terkonfirmasi: 2                         ║
-║  XSS / CORS bad    : 3 / 1                       ║
-║  Header E/F / TLS  : 12 / 1                     ║
+║  Port terbuka      : 231                          ║
+║  Nuclei findings   : 9                            ║
+║  Secret terkonfirmasi: 2                          ║
+║  XSS / CORS bad    : 3 / 1                        ║
+║  Header E/F / TLS  : 12 / 1                       ║
 ║  WAF               : YA (Cloudflare) — rate turun ║
-║  Step OK / Gagal   : 22 / 0                      ║
-╚══════════════════════════════════════════════════╝
+║  Step OK / Gagal   : 22 / 0                       ║
+╚═══════════════════════════════════════════════════╝
 ```
 
 ---
