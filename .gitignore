@@ -1,0 +1,20 @@
+# Recon results & logs
+recon_results/
+recon_cron.log
+*.log
+
+# Config dengan API key — JANGAN COMMIT!
+recon.conf
+
+# Output scan lokal
+report.html
+dashboard.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

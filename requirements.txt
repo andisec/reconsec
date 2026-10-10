@@ -1,0 +1,45 @@
+# ==============================================================
+# RECON — Full Auto Recon Tool v4.0.1 — requirements.txt
+# Daftar dependencies untuk install.sh
+# Repo : https://github.com/andisec/reconsec
+#
+# Format tiap baris: id|name|category|source|description
+#   id       = nomor menu di install.sh
+#   name     = nama binary / tool
+#   category = go  -> go install (butuh golang, no 12)
+#              pkg -> apt / pacman / dnf / brew / pkg
+#              pip -> pip3 install
+#              git -> git clone (source = URL repo)
+#              dl  -> download file (source = URL; wordlist -> ~/.wordlist/dirs.txt)
+# Tambah tool baru? Tinggal tambah 1 baris — menu
+# install.sh otomatis ikut. Tanpa pipe "|" di description!
+# ==============================================================
+1|nuclei|go|github.com/projectdiscovery/nuclei/v3/cmd/nuclei|Vulnerability scanner — engine utama
+2|subfinder|go|github.com/projectdiscovery/subfinder/v2/cmd/subfinder|Subdomain enumeration (passive)
+3|httpx|go|github.com/projectdiscovery/httpx/cmd/httpx|Live host probe dan tech detection
+4|dnsx|go|github.com/projectdiscovery/dnsx/cmd/dnsx|DNS brute force dan resolver
+5|ffuf|go|github.com/ffuf/ffuf/v2|Directory dan parameter brute force
+6|dalfox|go|github.com/hahwul/dalfox/v2|XSS scanner dan parameter analysis
+7|assetfinder|go|github.com/tomnomnom/assetfinder|Subdomain sources (passive alternatif)
+8|waybackurls|go|github.com/tomnomnom/waybackurls|Ekstraksi URL historis (Wayback Machine)
+9|gowitness|go|github.com/sensepost/gowitness|Screenshot subdomain (butuh chromium, no 21)
+10|alterx|go|github.com/projectdiscovery/alterx/cmd/alterx|Subdomain permutation generator
+11|subzy|go|github.com/luka967/subzy|Subdomain takeover checker
+12|golang|pkg|golang-go|Bahasa Go — prasyarat tools no 1-11
+13|curl|pkg|curl|HTTP client (fallback utama recon.sh)
+14|jq|pkg|jq|JSON parser untuk report dan parsing
+15|nmap|pkg|nmap|Port scanner
+16|whois|pkg|whois|WHOIS dan info registrasi domain
+17|dig|pkg|dnsutils|DNS lookup (fallback)
+18|openssl|pkg|openssl|TLS dan sertifikat analysis
+19|netcat|pkg|netcat|Banner grabbing dan open port check
+20|git|pkg|git|Clone tools dan templates
+21|chromium|pkg|chromium|Headless browser untuk screenshot (skip di Termux native)
+22|testssl.sh|git|https://github.com/drwetter/testssl.sh|Audit TLS/SSL mendalam
+23|theHarvester|pip|theHarvester|OSINT email dan subdomain harvesting
+24|arjun|pip|arjun|Hidden parameter discovery
+25|wafw00f|pip|wafw00f|WAF fingerprinting
+26|apkleaks|pip|apkleaks|Secret scanning file APK (butuh Java)
+27|whatweb|pkg|whatweb|Web technology fingerprinting
+28|unzip|pkg|unzip|Extract file zip dan APK
+29|wordlist|dl|https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/common.txt|Wordlist directory brute force (SecLists common.txt -> ~/.wordlist/dirs.txt)
